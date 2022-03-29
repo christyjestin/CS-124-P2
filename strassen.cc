@@ -30,7 +30,7 @@ vector<vector<int>> add(vector<vector<int>>& M1, vector<vector<int>>& M2, int d,
 }
 
 vector<vector<int>> sub(vector<vector<int>>& M1, vector<vector<int>>& M2, int d) {
-    return add(M1, M2, d, isSub = true);
+    return add(M1, M2, d, true);
 }
 
 vector<vector<int>> pad(vector<vector<int>>& A, int d) {
