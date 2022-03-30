@@ -3,10 +3,13 @@
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
+#include <fstream>
+#include <math.h>
+#include <cassert>
 
 using namespace std;
 
-int CROSSOVER_POINT = 1;
+int CROSSOVER_POINT = 15;
 
 vector<vector<int>> standard(vector<vector<int>>& A, vector<vector<int>>& B, int d) {
     vector<vector<int>> output (d, vector<int> (d, 0));
@@ -41,9 +44,9 @@ void pad(vector<vector<int>>& A, int d) {
     A.push_back(vector<int> (d + 1, 0));
 }
 
-void unpad(vector<vector<int>>& A, int desired_d) {
+void unpad(vector<vector<int>>& A, int d) {
     A.pop_back();
-    for (int i = 0; i < desired_d; i++) {
+    for (int i = 0; i < d; i++) {
         A[i].pop_back();
     }
 }
@@ -117,17 +120,17 @@ vector<vector<int>> strassen(vector<vector<int>> M1, vector<vector<int>> M2, int
         }
     }
 
-    if (d % 2 != 0) unpad(output, d-1);
+    if (d % 2 != 0) unpad(output, d);
     return output;
 }
 
-int triangle(float probability) {
+int triangle(double probability) {
     vector<vector<int>> randomgraph (1024, vector<int> (1024, 0));
     srand (time(NULL));
     for (int i = 0; i < 1024; i++) {
         for (int j = 0; j < i; j++) {
-                randomgraph[i][j] = ((float) rand() / RAND_MAX) < probability ? 1 : 0;
-                randomgraph[i][1024-j] = randomgraph[i][j];
+            randomgraph[i][j] = ((double) rand() / RAND_MAX) < probability ? 1 : 0;
+            randomgraph[i][1024-j] = randomgraph[i][j];
         }
     }
     vector<vector<int>> squared = strassen(randomgraph, randomgraph, 1024);
@@ -139,38 +142,54 @@ int triangle(float probability) {
     return sum / 6;
 }
 
-int main(int argc, char* argv[]) {
-
-    int flag = atoi(argv[1]);
-    int d = atoi(argv[2]);
-
-    cout << "Flag: " << flag << " Dimension: " << d << " " << endl;
-
-    vector<vector<int>> A = {{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1}};
-    vector<vector<int>> B= {{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1}};
-    d = 9;
-    
-    vector<vector<int>> result = strassen(A, B, d);
-    vector<vector<int>> result2 =  standard(A,B,d);
-
-    for (int i = 0; i < d; i++) {
-        for (int j = 0; j < d; j++)
-            cout << result[i][j] << " ";
-        cout << endl;
+void process_file(char* filename, int d) {
+    vector<vector<int>> A (d, vector<int> (d, 0));
+    vector<vector<int>> B (d, vector<int> (d, 0));
+    int size = (int) pow(d, 2);
+    ifstream file(filename);
+    if (file.is_open()) {
+        string line;
+        int counter = 0;
+        while (getline(file, line)) {
+            if (counter < size) {
+                A[counter / d][counter % d] = stoi(line);
+            } else {
+                assert(counter < 2 * size);
+                int pos = counter - size;
+                B[pos / d][pos % d] = stoi(line);
+            }
+            counter++;
+        }
+        assert(counter == 2 * size);
+        file.close();
     }
-    cout << endl;
+
+    vector<vector<int>> C = strassen(A, B, d);
     for (int i = 0; i < d; i++) {
-        for (int j = 0; j < d; j++)
-            cout << result2[i][j] << " ";
-        cout << endl;
+        cout << C[i][i] << endl;
     }
 }
 
-
-void crossoverpoint(){
-
-
-    
+int main(int argc, char* argv[]) {
+    int flag = atoi(argv[1]);
+    assert(flag >= 0 && flag < 3);
+    // input file flag and experimental crossover flag
+    if (flag == 0 || flag == 1) {
+        assert((flag == 0 && argc == 4) || (flag == 1 && argc == 5));
+        if (flag == 1) CROSSOVER_POINT = atoi(argv[4]);
+        int d = atoi(argv[2]);
+        process_file(argv[3], d);
+    // triangle flag
+    } else {
+        assert(argc == 4);
+        double p = atof(argv[2]);
+        int numtrials = atoi(argv[3]);
+        int sum = 0;
+        for (int i = 0; i < numtrials; i++) {
+            sum += triangle(p);
+        }
+        cout << ((float) sum) / numtrials << endl;
+    }
 }
 
 // not correct to fix matrix size first
