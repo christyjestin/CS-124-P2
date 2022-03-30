@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <iostream>
 
 using namespace std;
 
-int CROSSOVER_POINT = 0;
+int CROSSOVER_POINT = 1;
 
 vector<vector<int>> standard(vector<vector<int>>& A, vector<vector<int>>& B, int d) {
     vector<vector<int>> output (d, vector<int> (d, 0));
@@ -33,34 +34,29 @@ vector<vector<int>> sub(vector<vector<int>>& M1, vector<vector<int>>& M2, int d)
     return add(M1, M2, d, true);
 }
 
-vector<vector<int>> pad(vector<vector<int>>& A, int d) {
+void pad(vector<vector<int>>& A, int d) {
     for (int i = 0; i < d; i++) {
         A[i].push_back(0);
     }
     A.push_back(vector<int> (d + 1, 0));
-    return A;
 }
 
-vector<vector<int>> unpad(vector<vector<int>>& A, int desired_d) {
+void unpad(vector<vector<int>>& A, int desired_d) {
     A.pop_back();
     for (int i = 0; i < desired_d; i++) {
         A[i].pop_back();
     }
-    return A;
 }
 
-
-vector<vector<int>> strassen(vector<vector<int>>& M1, vector<vector<int>>& M2, int d) {
-
-    if (d < CROSSOVER_POINT) return standard(M1, M2, d);
+vector<vector<int>> strassen(vector<vector<int>> M1, vector<vector<int>> M2, int d) {
+    if (d <= CROSSOVER_POINT) return standard(M1, M2, d);
 
     int halfd = (d + 1) / 2;    // ceiling of d/2 (if d = 10, we have halfd = 5, if d = 11, we have halfd = 6)
     int fulld = halfd * 2;      // smallest even number geq d
-    vector<vector<int>> output (fulld, vector<int> (fulld, 0));
 
     if (d % 2 != 0) {
-        M1 = pad(M1, d);
-        M2 = pad(M2, d);
+        pad(M1, d);
+        pad(M2, d);
     }
 
     // A B
@@ -92,19 +88,21 @@ vector<vector<int>> strassen(vector<vector<int>>& M1, vector<vector<int>>& M2, i
     }
 
     // P1 = A(F-H)
-    vector<vector<int>> P1 = strassen(A, sub(F, H, halfd));
+    vector<vector<int>> P1 = strassen(A, sub(F, H, halfd), halfd);
     // P2 = (A+B)H
-    vector<vector<int>> P2 = strassen(add(A, B, halfd), H);
+    vector<vector<int>> P2 = strassen(add(A, B, halfd), H, halfd);
     // P3 = (C+D)E
-    vector<vector<int>> P3 = strassen(add(C, D, halfd), E);
+    vector<vector<int>> P3 = strassen(add(C, D, halfd), E, halfd);
     // P4 = D(G-E)
-    vector<vector<int>> P4 = strassen(D, sub(G, E, halfd));
+    vector<vector<int>> P4 = strassen(D, sub(G, E, halfd), halfd);
     // P5 = (A+D)(E+H)
-    vector<vector<int>> P5 = strassen(add(A, D, halfd), add(E, H, halfd));
+    vector<vector<int>> P5 = strassen(add(A, D, halfd), add(E, H, halfd), halfd);
     // P6 = (B-D)(G+H)
-    vector<vector<int>> P6 = strassen(sub(B, D, halfd), add(G, H, halfd));
+    vector<vector<int>> P6 = strassen(sub(B, D, halfd), add(G, H, halfd), halfd);
     // P7 = (C-A)(E+F)
-    vector<vector<int>> P7 = strassen(sub(C, A, halfd), add(E, F, halfd));
+    vector<vector<int>> P7 = strassen(sub(C, A, halfd), add(E, F, halfd), halfd);
+
+    vector<vector<int>> output (fulld, vector<int> (fulld, 0));
 
     for(int i = 0; i < halfd; i++){
         for(int j = 0; j < halfd; j++){
@@ -119,7 +117,7 @@ vector<vector<int>> strassen(vector<vector<int>>& M1, vector<vector<int>>& M2, i
         }
     }
 
-    if (d % 2 != 0) output = unpad(output);
+    if (d % 2 != 0) unpad(output, d-1);
     return output;
 }
 
@@ -128,11 +126,12 @@ int triangle(float probability) {
     srand (time(NULL));
     for (int i = 0; i < 1024; i++) {
         for (int j = 0; j < i; j++) {
-                randomgraph[i][j] = ((double) rand() / RAND_MAX) < probability ? 1 : 0;
+                randomgraph[i][j] = ((float) rand() / RAND_MAX) < probability ? 1 : 0;
                 randomgraph[i][1024-j] = randomgraph[i][j];
         }
     }
-    vector<vector<int>> cubed = strassen(strassen(randomgraph, randomgraph), randomgraph);
+    vector<vector<int>> squared = strassen(randomgraph, randomgraph, 1024);
+    vector<vector<int>> cubed = strassen(squared, randomgraph, 1024);
     int sum = 0;
     for (int i = 0; i < 1024; i++) {
         sum += cubed[i][i];
@@ -140,7 +139,58 @@ int triangle(float probability) {
     return sum / 6;
 }
 
-int main(int argc, char** argv) {
-    int flag = atoi(argv[0]);
-    int d = atoi(argv[1]);
+int main(int argc, char* argv[]) {
+
+    int flag = atoi(argv[1]);
+    int d = atoi(argv[2]);
+
+    cout << "Flag: " << flag << " Dimension: " << d << " " << endl;
+
+    vector<vector<int>> A = {{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1}};
+    vector<vector<int>> B= {{0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1},{0,1,1,1,2,3,4,5,1}};
+    d = 9;
+    
+    vector<vector<int>> result = strassen(A, B, d);
+    vector<vector<int>> result2 =  standard(A,B,d);
+
+    for (int i = 0; i < d; i++) {
+        for (int j = 0; j < d; j++)
+            cout << result[i][j] << " ";
+        cout << endl;
+    }
+    cout << endl;
+    for (int i = 0; i < d; i++) {
+        for (int j = 0; j < d; j++)
+            cout << result2[i][j] << " ";
+        cout << endl;
+    }
 }
+
+
+void crossoverpoint(){
+
+
+    
+}
+
+// not correct to fix matrix size first
+// 100 by 100 matrix
+// determine crossover point,
+
+// any crossover point between 50 and 100 is the same algorithm
+// choose crossover point by changing size of matrix,
+
+// "one shot strassen" - only use strassen once , then use conventional 
+// "two shot" - use strassen twice, then conventional
+
+// correct way to find crossover point is to use one shot strassen until it is faster than conventional
+// why is this correct? hint: correct way to strassen, is not to strassen until the bottom, rather strassen, until 
+// real strassen is hybrid algorithm
+// 20 or so for part 1
+// increment by 2 and 
+
+// for odd, try again, bc padding difference, 
+
+
+// start small, only find it for eeven dimension matrices
+// start with 2 by 2, 
