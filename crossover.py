@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import subprocess
 
 numtrials = 5
-start = 55
+start = 5
 stop = 250
-step = 5
+step = 2
 for d in range(200, 800, 80):
     times = []
     for k in range(numtrials):
@@ -20,9 +20,10 @@ for d in range(200, 800, 80):
             temp.append(float(subprocess.run([*common_args, str(n)], capture_output=True, text=True).stdout))
         times.append(temp)
     times = np.mean(np.array(times), axis=0)
+    times = times / np.max(times)
     plt.plot(np.arange(start, stop, step), times, label=f"d={d}")
     print(d)
 plt.ylabel("Average Time (scaled to be between 0 and 1)")
 plt.xlabel("Crossover Point")
-plt.legend(loc="upper left")
+plt.legend(loc="upper right")
 plt.savefig("crossover_graph.png")
