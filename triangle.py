@@ -13,4 +13,4 @@ plt.plot(np.array(probs), comb(1024,3) * (np.array(probs) ** 3), marker="o", lab
 plt.legend(loc="upper left")
 plt.xlabel("Probability")
 plt.ylabel("Number of Triangles in 1024 Vertex Graph")
-plt.savefig("graph.png")
+plt.savefig("triangle_graph.png")

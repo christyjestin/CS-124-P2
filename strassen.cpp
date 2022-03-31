@@ -126,11 +126,10 @@ vector<vector<int>> strassen(vector<vector<int>> M1, vector<vector<int>> M2, int
 
 int triangle(double probability) {
     vector<vector<int>> randomgraph (1024, vector<int> (1024, 0));
-    srand (time(NULL));
     for (int i = 0; i < 1024; i++) {
         for (int j = 0; j < i; j++) {
             randomgraph[i][j] = ((double) rand() / RAND_MAX) < probability ? 1 : 0;
-            randomgraph[i][1024-j] = randomgraph[i][j];
+            randomgraph[j][i] = randomgraph[i][j];
         }
     }
     vector<vector<int>> squared = strassen(randomgraph, randomgraph, 1024);
@@ -142,7 +141,7 @@ int triangle(double probability) {
     return sum / 6;
 }
 
-void process_file(char* filename, int d) {
+void process_file(char* filename, int d, bool shouldtracktime) {
     vector<vector<int>> A (d, vector<int> (d, 0));
     vector<vector<int>> B (d, vector<int> (d, 0));
     int size = (int) pow(d, 2);
@@ -163,10 +162,15 @@ void process_file(char* filename, int d) {
         assert(counter == 2 * size);
         file.close();
     }
-
+    float start = ((float) clock()) / CLOCKS_PER_SEC;
     vector<vector<int>> C = strassen(A, B, d);
-    for (int i = 0; i < d; i++) {
-        cout << C[i][i] << endl;
+    float stop = ((float) clock()) / CLOCKS_PER_SEC;
+    if (shouldtracktime) {
+        cout << stop - start << endl;
+    } else {
+        for (int i = 0; i < d; i++) {
+            cout << C[i][i] << endl;
+        }
     }
 }
 
@@ -178,10 +182,11 @@ int main(int argc, char* argv[]) {
         assert((flag == 0 && argc == 4) || (flag == 1 && argc == 5));
         if (flag == 1) CROSSOVER_POINT = atoi(argv[4]);
         int d = atoi(argv[2]);
-        process_file(argv[3], d);
+        process_file(argv[3], d, flag == 1);
     // triangle flag
     } else {
         assert(argc == 4);
+        srand(time(NULL));
         double p = atof(argv[2]);
         int numtrials = atoi(argv[3]);
         int sum = 0;
