@@ -196,25 +196,3 @@ int main(int argc, char* argv[]) {
         cout << ((float) sum) / numtrials << endl;
     }
 }
-
-// not correct to fix matrix size first
-// 100 by 100 matrix
-// determine crossover point,
-
-// any crossover point between 50 and 100 is the same algorithm
-// choose crossover point by changing size of matrix,
-
-// "one shot strassen" - only use strassen once , then use conventional 
-// "two shot" - use strassen twice, then conventional
-
-// correct way to find crossover point is to use one shot strassen until it is faster than conventional
-// why is this correct? hint: correct way to strassen, is not to strassen until the bottom, rather strassen, until 
-// real strassen is hybrid algorithm
-// 20 or so for part 1
-// increment by 2 and 
-
-// for odd, try again, bc padding difference, 
-
-
-// start small, only find it for eeven dimension matrices
-// start with 2 by 2, 
